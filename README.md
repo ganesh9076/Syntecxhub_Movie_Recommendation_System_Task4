@@ -123,3 +123,8 @@ Full results get written to `outputs/evaluation_report.md` on every run.
 - A natural next step would be a **hybrid** model (blend content-based
   and CF scores), or pulling in TMDB overviews/keywords via the `links.csv`
   TMDB ids for richer text features than genres+tags alone.
+
+## Author
+
+**Ganesh Palav**  
+B.Tech Computer Science & Engineering
