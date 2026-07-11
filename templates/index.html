@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Movie Recommender</title>
+<style>
+  :root { --bg:#0f1117; --card:#1a1d29; --accent:#e8a33d; --text:#eceef2; --muted:#8b90a0; }
+  * { box-sizing: border-box; }
+  body {
+    margin:0; font-family: 'Segoe UI', Roboto, Arial, sans-serif;
+    background:var(--bg); color:var(--text); padding:32px 16px;
+  }
+  .wrap { max-width: 760px; margin: 0 auto; }
+  h1 { font-size: 1.6rem; margin-bottom:4px; }
+  p.sub { color: var(--muted); margin-top:0; }
+  .card {
+    background: var(--card); border-radius:12px; padding:20px 22px;
+    margin-bottom:20px; box-shadow: 0 4px 16px rgba(0,0,0,0.25);
+  }
+  .card h2 { margin-top:0; font-size:1.05rem; color:var(--accent); }
+  input, select {
+    width:100%; padding:10px 12px; border-radius:8px; border:1px solid #333749;
+    background:#12141c; color:var(--text); margin-bottom:10px; font-size:0.95rem;
+  }
+  button {
+    background: var(--accent); color:#1a1206; border:none; padding:10px 18px;
+    border-radius:8px; font-weight:600; cursor:pointer;
+  }
+  button:hover { opacity:0.9; }
+  ul.results { list-style:none; padding:0; margin-top:14px; }
+  ul.results li {
+    padding:10px 0; border-bottom:1px solid #2a2e3d; display:flex;
+    justify-content:space-between; gap:10px; font-size:0.92rem;
+  }
+  ul.results li:last-child { border-bottom:none; }
+  .score { color: var(--muted); white-space:nowrap; }
+  .err { color:#e86464; margin-top:10px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>🎬 Movie Recommendation System</h1>
+  <p class="sub">MovieLens ml-latest-small &middot; content-based (TF-IDF) vs collaborative filtering</p>
+
+  <div class="card">
+    <h2>Content-based: "Because you liked..."</h2>
+    <input id="cb-title" placeholder="e.g. Toy Story, The Matrix, Inception">
+    <button onclick="runQuery('content')">Recommend by metadata similarity</button>
+    <ul id="cb-results" class="results"></ul>
+    <div id="cb-err" class="err"></div>
+  </div>
+
+  <div class="card">
+    <h2>Item-based collaborative filtering</h2>
+    <input id="icf-title" placeholder="e.g. Toy Story, The Matrix, Inception">
+    <button onclick="runQuery('item_cf')">Recommend by rating patterns</button>
+    <ul id="icf-results" class="results"></ul>
+    <div id="icf-err" class="err"></div>
+  </div>
+
+  <div class="card">
+    <h2>Personalized (matrix factorization)</h2>
+    <input id="ucf-user" type="number" placeholder="userId, e.g. 1 (range 1-610)">
+    <button onclick="runQuery('user_cf')">Get personalized picks</button>
+    <ul id="ucf-results" class="results"></ul>
+    <div id="ucf-err" class="err"></div>
+  </div>
+</div>
+
+<script>
+async function runQuery(kind) {
+  let url, resultsId, errId;
+  if (kind === 'content') {
+    const title = document.getElementById('cb-title').value.trim();
+    url = `/api/recommend/content?title=${encodeURIComponent(title)}&n=10`;
+    resultsId = 'cb-results'; errId = 'cb-err';
+  } else if (kind === 'item_cf') {
+    const title = document.getElementById('icf-title').value.trim();
+    url = `/api/recommend/item_cf?title=${encodeURIComponent(title)}&n=10`;
+    resultsId = 'icf-results'; errId = 'icf-err';
+  } else {
+    const uid = document.getElementById('ucf-user').value.trim();
+    url = `/api/recommend/user_cf?user_id=${encodeURIComponent(uid)}&n=10`;
+    resultsId = 'ucf-results'; errId = 'ucf-err';
+  }
+
+  const resultsEl = document.getElementById(resultsId);
+  const errEl = document.getElementById(errId);
+  resultsEl.innerHTML = ''; errEl.textContent = '';
+
+  try {
+    const res = await fetch(url);
+    const data = await res.json();
+    if (!res.ok) { errEl.textContent = data.error || 'Something went wrong.'; return; }
+    for (const rec of data.recommendations) {
+      const li = document.createElement('li');
+      const label = rec.clean_title + (rec.year ? ` (${rec.year})` : '');
+      const score = rec.similarity !== undefined ? `sim ${rec.similarity}` :
+                    rec.predicted_rating !== undefined ? `pred ${rec.predicted_rating}★` : '';
+      li.innerHTML = `<span>${label}</span><span class="score">${score}</span>`;
+      resultsEl.appendChild(li);
+    }
+  } catch (e) {
+    errEl.textContent = 'Request failed: ' + e;
+  }
+}
+</script>
+</body>
+</html>
