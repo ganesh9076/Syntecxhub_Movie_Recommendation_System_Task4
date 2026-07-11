@@ -1,6 +1,6 @@
 # Movie Recommendation System
 
-Internship Project 1 — content-based and collaborative-filtering movie
+Internship Project 4 — content-based and collaborative-filtering movie
 recommenders built on the MovieLens `ml-latest-small` dataset.
 
 ## Dataset
